@@ -56,6 +56,7 @@ impl ArgumentConvert for serenity::Role {
         guild_id: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
         let guild_id = guild_id.ok_or(RoleParseError::NotInGuild)?;
 

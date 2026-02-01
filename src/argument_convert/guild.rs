@@ -50,6 +50,7 @@ impl ArgumentConvert for serenity::Guild {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
         let cache = ctx.cache().ok_or(GuildParseError::NoCache)?;
         let guild_id = s.parse().map_err(GuildParseError::Malformed)?;
@@ -69,6 +70,7 @@ impl ArgumentConvert for serenity::GuildId {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
         s.parse()
     }

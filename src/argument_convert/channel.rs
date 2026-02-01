@@ -103,6 +103,7 @@ impl ArgumentConvert for serenity::Channel {
         guild_id: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
         let channel = lookup_channel_global(&ctx, guild_id, s).await?;
 
@@ -163,8 +164,9 @@ impl ArgumentConvert for serenity::GuildChannel {
         guild_id: Option<serenity::GuildId>,
         channel_id: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
-        match serenity::Channel::convert(&ctx, guild_id, channel_id, s).await {
+        match serenity::Channel::convert(&ctx, guild_id, channel_id, s, None).await {
             Ok(serenity::Channel::Guild(channel)) => Ok(channel),
             Ok(_) => Err(GuildChannelParseError::NotAGuildChannel),
             Err(ChannelParseError::Http(e)) => Err(GuildChannelParseError::Http(e)),

@@ -48,6 +48,7 @@ impl ArgumentConvert for serenity::Emoji {
         guild_id: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
         // Get Guild or PartialGuild
         let guild_id = guild_id.ok_or(EmojiParseError::OutsideGuild)?;
@@ -87,6 +88,7 @@ impl ArgumentConvert for serenity::EmojiId {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
         s.parse()
     }

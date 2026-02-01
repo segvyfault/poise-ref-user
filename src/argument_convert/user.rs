@@ -29,15 +29,11 @@ impl ArgumentConvert for serenity::User {
 
     async fn convert(
         ctx: impl serenity::CacheHttp,
-        guild_id: Option<serenity::GuildId>,
-        channel_id: Option<serenity::GenericChannelId>,
+        _: Option<serenity::GuildId>,
+        _: Option<serenity::GenericChannelId>,
         s: &str,
+        msg: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
-        // Convert as a Member which uses HTTP endpoints instead of cache
-        if let Ok(member) = serenity::Member::convert(&ctx, guild_id, channel_id, s).await {
-            return Ok(member.user);
-        }
-
         // If string is a raw user ID or a mention
         if let Some(user_id) = s
             .parse()
@@ -48,6 +44,16 @@ impl ArgumentConvert for serenity::User {
             // the bot is joined
             if let Ok(user) = user_id.to_user(&ctx).await {
                 return Ok(user);
+            }
+        }
+        else {
+            if let Some((msg, used)) = msg {
+                if !*used {
+                    if let Some(referenced) = &msg.referenced_message {
+                        *used = true;
+                        return Ok(referenced.author.clone());
+                    }
+                }
             }
         }
 

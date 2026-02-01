@@ -94,10 +94,14 @@ fn parse_lazy(
         match <#ty as ::poise::PopArgument>::pop_from(
             &args,
             attachment_idx,
+            uru,
             serenity_ctx,
             msg
         ).await {
-            Ok((args, attachment_idx, token)) => {
+            Ok((new_args, new_attachment_idx, new_uru, token)) => {
+                args = new_args;
+                attachment_idx = new_attachment_idx;
+                uru = new_uru;
                 let #token: Option<#ty> = Some(token);
                 #parsed_rest
             }
@@ -109,11 +113,12 @@ fn parse_lazy(
 /// Parses `#[rest] T` and `#[rest] Option<T>`. In the former case, the extra tail _must_ exist, or
 /// else this will error.
 fn parse_rest(
-    ty: &syn::Type,
+    mut ty: &syn::Type,
     token: syn::Ident,
     parsed_rest: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    let (pass, fail) = if let Some(ty) = unwrap_generic(ty, "Option") {
+    let (pass, fail) = if let Some(extracted_ty) = unwrap_generic(ty, "Option") {
+        ty = extracted_ty;
         (
             quote::quote! { let #token: Option<#ty> = Some(#token); },
             quote::quote! {
@@ -134,7 +139,7 @@ fn parse_rest(
             #fail
         } else {
             match <#ty as ::poise::ArgumentConvert>::convert(
-                serenity_ctx, msg.guild_id, Some(msg.channel_id), input
+                serenity_ctx, msg.guild_id, Some(msg.channel_id), input, None
             ).await {
                 Ok(#token) => {
                     let args = "";
@@ -155,19 +160,26 @@ fn parse_flag(
     parsed_rest: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
     quote::quote! {
-        let #token = match <String as ::poise::PopArgument>::pop_from(
+        match <String as ::poise::PopArgument>::pop_from(
             &args,
             attachment_idx,
+            uru,
             serenity_ctx,
             msg
         ).await {
-            Ok((args, attachment_idx, token)) if token.eq_ignore_ascii_case(#name) => true,
+            Ok((new_args, new_attachment_idx, new_uru, token)) if token.eq_ignore_ascii_case(#name) => {
+                args = new_args;
+                attachment_idx = new_attachment_idx;
+                uru = new_uru;
+                let #token = true;
+                #parsed_rest
+            }
             _ => {
                 error = (concat!("Must use either `", #name, "` or nothing as a modifier").into(), None);
-                false
+                let #token = false;
+                #parsed_rest
             }
-        };
-        #parsed_rest
+        }
     }
 }
 
@@ -181,10 +193,14 @@ fn parse_string(
         match <String as ::poise::PopArgument>::pop_from(
             &args,
             attachment_idx,
+            uru,
             serenity_ctx,
             msg
         ).await {
-            Ok((args, attachment_idx, token)) => {
+            Ok((new_args, new_attachment_idx, new_uru, token)) => {
+                args = new_args;
+                attachment_idx = new_attachment_idx;
+                uru = new_uru;
                 match <#ty as ::std::str::FromStr>::from_str(&token) {
                     Ok(#token) => { #parsed_rest },
                     Err(e) => error = (e.into(), Some(token)),
@@ -202,30 +218,33 @@ fn parse_param(
     parsed_rest: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
     if let Some(ty) = unwrap_generic(ty, "Option") {
-        // Greedily parse `Option<T>` by first trying to parse for `Some(T)`. If that fails, try
-        // again with `None` instead.
         quote::quote! {
             match <#ty as ::poise::PopArgument>::pop_from(
                 &args,
                 attachment_idx,
+                uru,
                 serenity_ctx,
                 msg
             ).await {
-                Ok((args, attachment_idx, token)) => {
+                Ok((new_args, new_attachment_idx, new_uru, token)) => {
+                    args = new_args;
+                    attachment_idx = new_attachment_idx;
+                    uru = new_uru;
                     let #token: Option<#ty> = Some(token);
                     #parsed_rest
                 }
-                Err(e) => error = e,
+                Err(e) => {
+                    error = e;
+                    let #token: Option<#ty> = None;
+                    #parsed_rest
+                }
             }
-            let #token: Option<#ty> = None;
-            #parsed_rest
         }
     } else if let Some(ty) = unwrap_generic(ty, "Vec") {
-        // Greedily try to parse the longest `Vec<T>` possible. Then, backtrack as needed until we
-        // successfully parse the rest of the parameters.
         quote::quote! {
             let mut #token = Vec::new();
             let mut rest = vec![args.clone()];
+            let mut uru_states = vec![uru];
 
             let mut args = args.clone();
             let mut attachment_idx = attachment_idx;
@@ -234,39 +253,44 @@ fn parse_param(
                 match <#ty as ::poise::PopArgument>::pop_from(
                     &args,
                     attachment_idx,
+                    uru,
                     serenity_ctx,
                     msg
                 ).await {
-                    Ok((new_args, new_attachment_idx, token)) => {
+                    Ok((new_args, new_attachment_idx, new_uru, token)) => {
                         #token.push(token);
                         rest.push(new_args.clone());
+                        uru_states.push(new_uru);
                         args = new_args;
                         attachment_idx = new_attachment_idx;
+                        uru = new_uru;
                     },
-                    Err(_) => {
-                        // No `error = e`, because parsing into a Vec<T> parameter with
-                        // spare arguments would cause the error from the spare
-                        // arguments to be the parse error for T, which is confusing
-                        break;
-                    }
+                    Err(_) => break,
                 }
             }
 
-            while let Some(args) = rest.pop() {
+            while let Some((args, uru_state)) = rest.pop().zip(uru_states.pop()) {
+                args = args;
+                uru = uru_state;
                 #parsed_rest
                 #token.pop();
             }
         }
     } else {
-        // Here, we just have a `T`.
         quote::quote! {
             match <#ty as ::poise::PopArgument>::pop_from(
                 &args,
                 attachment_idx,
+                uru,
                 serenity_ctx,
                 msg
             ).await {
-                Ok((args, attachment_idx, #token)) => { #parsed_rest },
+                Ok((new_args, new_attachment_idx, new_uru, #token)) => {
+                    args = new_args;
+                    attachment_idx = new_attachment_idx;
+                    uru = new_uru;
+                    #parsed_rest
+                },
                 Err(e) => error = e,
             }
         }
@@ -308,8 +332,9 @@ pub fn generate_prefix_action(inv: &Invocation) -> Result<proc_macro2::TokenStre
             let ( #( #param_idents, )* .. ) = async {
                 let serenity_ctx = ctx.serenity_context();
                 let msg = ctx.msg;
-                let args = ctx.args;
-                let attachment_idx = 0;
+                let mut args = ctx.args;
+                let mut attachment_idx = 0;
+                let mut uru = false;
 
                 let mut error: (Box<dyn std::error::Error + Send + Sync>, Option<String>)
                     = (::poise::TooManyArguments::default().into(), None);

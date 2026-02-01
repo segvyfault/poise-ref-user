@@ -8,6 +8,8 @@ mod message;
 mod role;
 mod user;
 
+pub use user::UserParseError;
+
 use crate::serenity_prelude as serenity;
 
 /// Parse a value from a string in the context of a received message.
@@ -30,6 +32,7 @@ pub trait ArgumentConvert: Sized {
         guild_id: Option<serenity::GuildId>,
         channel_id: Option<serenity::GenericChannelId>,
         s: &str,
+        msg: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err>;
 }
 
@@ -42,6 +45,7 @@ impl ArgumentConvert for String {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
         Ok(s.to_owned())
     }

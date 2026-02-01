@@ -9,7 +9,7 @@ use std::str::FromStr;
 ///  - If Ok, this is `(remaining, attachment_index, T)`
 ///  - If Err, this is `(error, failing_arg)`
 pub(crate) type PopArgumentResult<'a, T> =
-    Result<(&'a str, usize, T), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>;
+    Result<(&'a str, usize, bool, T), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>;
 
 /// Parse a value out of a string by popping off the front of the string. Discord message context
 /// is available for parsing, and IO may be done as part of the parsing.
@@ -25,6 +25,7 @@ pub trait PopArgument<'a>: Sized {
     async fn pop_from(
         args: &'a str,
         attachment_index: usize,
+        used_ref_user: bool,
         ctx: &serenity::Context,
         msg: &serenity::Message,
     ) -> PopArgumentResult<'a, Self>;
@@ -35,6 +36,7 @@ impl<'a> PopArgument<'a> for bool {
     async fn pop_from(
         args: &'a str,
         attachment_index: usize,
+        used_ref_user: bool,
         ctx: &serenity::Context,
         msg: &serenity::Message,
     ) -> PopArgumentResult<'a, Self> {
@@ -46,7 +48,7 @@ impl<'a> PopArgument<'a> for bool {
             _ => return Err((InvalidBool::default().into(), Some(string))),
         };
 
-        Ok((args.trim_start(), attachment_index, value))
+        Ok((args.trim_start(), attachment_index, used_ref_user, value))
     }
 }
 
@@ -55,6 +57,7 @@ impl<'a> PopArgument<'a> for serenity::Attachment {
     async fn pop_from(
         args: &'a str,
         attachment_index: usize,
+        used_ref_user: bool,
         ctx: &serenity::Context,
         msg: &serenity::Message,
     ) -> PopArgumentResult<'a, Self> {
@@ -64,7 +67,7 @@ impl<'a> PopArgument<'a> for serenity::Attachment {
             .ok_or_else(|| (MissingAttachment::default().into(), None))?
             .clone(); // `.clone()` is more clear than `.to_owned()` and is the same.
 
-        Ok((args, attachment_index + 1, attachment))
+        Ok((args, attachment_index + 1, used_ref_user, attachment))
     }
 }
 
@@ -73,11 +76,12 @@ impl<'a> PopArgument<'a> for String {
     async fn pop_from(
         args: &'a str,
         attachment_index: usize,
+        used_ref_user: bool,
         ctx: &serenity::Context,
         msg: &serenity::Message,
     ) -> PopArgumentResult<'a, Self> {
         match pop_string(args) {
-            Ok((args, string)) => Ok((args, attachment_index, string)),
+            Ok((args, string)) => Ok((args, attachment_index, used_ref_user, string)),
             Err(err) => Err((err.into(), Some(args.into()))),
         }
     }
@@ -94,6 +98,7 @@ macro_rules! from_str_pop_argument {
                 async fn pop_from(
                     args: &'a str,
                     attachment_index: usize,
+                    used_ref_user: bool,
                     ctx: &serenity::Context,
                     msg: &serenity::Message,
                 ) -> PopArgumentResult<'a, Self>
@@ -102,7 +107,7 @@ macro_rules! from_str_pop_argument {
                 {
                     let (args, string) = pop_string(args).map_err(|e| (e.into(), None))?;
                     let object = Self::from_str(&string).map_err(|e| (e.into(), Some(string)))?;
-                    Ok((args.trim_start(), attachment_index, object))
+                    Ok((args.trim_start(), attachment_index, used_ref_user, object))
                 }
             }
         )*
@@ -129,6 +134,7 @@ macro_rules! argumentconvert_pop_argument {
                 async fn pop_from(
                     args: &'a str,
                     attachment_index: usize,
+                    used_ref_user: bool,
                     ctx: &serenity::Context,
                     msg: &serenity::Message,
                 ) -> PopArgumentResult<'a, Self>
@@ -136,19 +142,64 @@ macro_rules! argumentconvert_pop_argument {
                     Self: ArgumentConvert,
                 {
                     let (args, string) = pop_string(args).map_err(|e| (e.into(), None))?;
-                    let object = Self::convert(ctx, msg.guild_id, Some(msg.channel_id), &string)
+                    let object = Self::convert(ctx, msg.guild_id, Some(msg.channel_id), &string, None)
                         .await
                         .map_err(|e| (e.into(), Some(string)))?;
 
-                    Ok((args.trim_start(), attachment_index, object))
+                    Ok((args.trim_start(), attachment_index, used_ref_user, object))
                 }
             }
         )*
     }
 }
 
+#[async_trait::async_trait]
+impl<'a> PopArgument<'a> for serenity::User {
+    async fn pop_from(
+        args: &'a str,
+        attachment_index: usize,
+        mut used_ref_user: bool,
+        ctx: &serenity::Context,
+        msg: &serenity::Message,
+    ) -> PopArgumentResult<'a, Self>
+    where
+        Self: ArgumentConvert,
+    {
+        let (args, string) = match pop_string(args) {
+            Ok(r) => r,
+            Err(_) => {
+                let object = match Self::convert(
+                    ctx,
+                    msg.guild_id, Some(msg.channel_id), 
+                    &args, 
+                    Some((msg.to_owned(), &mut used_ref_user))
+                )
+                    .await
+                {
+                    Ok(v) => v,
+                    Err(e) => return Err((e.into(), None))
+                };
+
+                return Ok((args.trim_start(), attachment_index, used_ref_user, object))
+            }
+        };
+
+        let object = Self::convert(
+            ctx, 
+            msg.guild_id, Some(msg.channel_id), 
+            &string, 
+            Some((msg.to_owned(), &mut used_ref_user))
+        )
+            .await
+            .map_err(|e| (e.into(), Some(string)))?;
+
+        Ok((args.trim_start(), attachment_index, used_ref_user, object))
+    }
+}
+
 argumentconvert_pop_argument! {
-    serenity::User, serenity::Member,
+    // serenity::User, 
+    serenity::Member,
     serenity::Message,
     serenity::Channel, serenity::GuildChannel,
     serenity::EmojiId, serenity::Emoji,
@@ -185,6 +236,7 @@ macro_rules! snowflake_pop_argument {
             async fn pop_from(
                 args: &'a str,
                 attachment_index: usize,
+                used_ref_user: bool,
                 ctx: &serenity::Context,
                 msg: &serenity::Message,
             ) -> PopArgumentResult<'a, Self> {
@@ -195,7 +247,7 @@ macro_rules! snowflake_pop_argument {
                     .ok()
                     .or_else(|| serenity::utils::$parse_fn(&string))
                 {
-                    Ok((args.trim_start(), attachment_index, parsed_id))
+                    Ok((args.trim_start(), attachment_index, used_ref_user, parsed_id))
                 } else {
                     Err(($error_type::default().into(), Some(string)))
                 }

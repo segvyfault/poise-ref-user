@@ -57,15 +57,17 @@ impl<'a, T: ChoiceParameter> crate::PopArgument<'a> for T {
     async fn pop_from(
         args: &'a str,
         attachment_index: usize,
+        used_ref_user: bool,
         ctx: &serenity::Context,
         msg: &serenity::Message,
     ) -> PopArgumentResult<'a, Self> {
-        let (args, attachment_index, s) =
-            String::pop_from(args, attachment_index, ctx, msg).await?;
+        let (args, attachment_index, uru, s) =
+            String::pop_from(args, attachment_index, used_ref_user, ctx, msg).await?;
 
         Ok((
             args,
             attachment_index,
+            uru,
             Self::from_name(&s).ok_or((
                 Box::new(crate::InvalidChoice {
                     __non_exhaustive: (),

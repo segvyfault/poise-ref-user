@@ -117,13 +117,14 @@ impl<'a> PopArgument<'a> for CodeBlock {
     async fn pop_from(
         args: &'a str,
         attachment_index: usize,
+        used_ref_user: bool,
         _: &serenity::Context,
         _: &serenity::Message,
-    ) -> Result<(&'a str, usize, Self), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>
+    ) -> Result<(&'a str, usize, bool, Self), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>
     {
         let (a, b) = pop_from(args).map_err(|e| (e.into(), None))?;
 
-        Ok((a, attachment_index, b))
+        Ok((a, attachment_index, used_ref_user, b))
     }
 }
 

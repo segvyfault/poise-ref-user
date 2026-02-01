@@ -55,6 +55,7 @@ impl ArgumentConvert for serenity::Message {
         _: Option<serenity::GuildId>,
         channel_id: Option<serenity::GenericChannelId>,
         s: &str,
+        _: Option<(serenity::Message, &mut bool)>,
     ) -> Result<Self, Self::Err> {
         let extract_from_message_id = || Some((channel_id?, s.parse().ok()?));
 
