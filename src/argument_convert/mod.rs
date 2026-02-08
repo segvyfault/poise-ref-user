@@ -12,6 +12,28 @@ pub use user::UserParseError;
 
 use crate::serenity_prelude as serenity;
 
+/// Message context, a helper for User and Member parsing
+pub struct MessageContext {
+    /// Message that will be used when parsing
+    pub message: serenity::Message,
+    /// State whether or not the referenced user has already been used
+    pub used_referenced_user: bool,
+
+    /// For situation where User consumes a string, that needs to be used in the next [rest] string arg
+    pub consumed_string: Option<String>
+}
+
+impl MessageContext {
+    /// new instance
+    pub fn new(message: serenity::Message, uru: bool) -> Self {
+        Self {
+            message,
+            used_referenced_user: uru,
+            consumed_string: None
+        }
+    }
+}
+
 /// Parse a value from a string in the context of a received message.
 ///
 /// This trait is similar to [`std::str::FromStr`]. The difference is that this trait supports
@@ -32,7 +54,7 @@ pub trait ArgumentConvert: Sized {
         guild_id: Option<serenity::GuildId>,
         channel_id: Option<serenity::GenericChannelId>,
         s: &str,
-        msg: Option<(serenity::Message, &mut bool)>,
+        msg: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err>;
 }
 
@@ -45,7 +67,7 @@ impl ArgumentConvert for String {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         Ok(s.to_owned())
     }

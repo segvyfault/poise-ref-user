@@ -60,7 +60,7 @@ impl<'a, T: ChoiceParameter> crate::PopArgument<'a> for T {
         used_ref_user: bool,
         ctx: &serenity::Context,
         msg: &serenity::Message,
-    ) -> PopArgumentResult<'a, Self> {
+    ) -> PopArgumentResult<Self> {
         let (args, attachment_index, uru, s) =
             String::pop_from(args, attachment_index, used_ref_user, ctx, msg).await?;
 

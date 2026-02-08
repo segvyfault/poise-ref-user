@@ -53,7 +53,7 @@ impl std::fmt::Display for CodeBlock {
 }
 
 /// Reads a [`CodeBlock`] from the front of the string and returns the remaining string.
-fn pop_from(args: &str) -> Result<(&str, CodeBlock), CodeBlockError> {
+fn pop_from(args: &str) -> Result<(String, CodeBlock), CodeBlockError> {
     let args = args.trim_start();
 
     let rest;
@@ -105,7 +105,7 @@ fn pop_from(args: &str) -> Result<(&str, CodeBlock), CodeBlockError> {
     } else {
         // discord likes to insert hair spaces at the end of code blocks sometimes for no reason
         code_block.code.trim_end_matches_in_place('\u{200a}');
-        Ok((rest, code_block))
+        Ok((rest.to_owned(), code_block))
     }
 }
 
@@ -120,7 +120,7 @@ impl<'a> PopArgument<'a> for CodeBlock {
         used_ref_user: bool,
         _: &serenity::Context,
         _: &serenity::Message,
-    ) -> Result<(&'a str, usize, bool, Self), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>
+    ) -> Result<(String, usize, bool, Self), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>
     {
         let (a, b) = pop_from(args).map_err(|e| (e.into(), None))?;
 

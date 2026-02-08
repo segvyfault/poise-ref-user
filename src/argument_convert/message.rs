@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use super::ArgumentConvert;
+use super::{ArgumentConvert, MessageContext};
 use crate::serenity_prelude as serenity;
 
 /// Error that can be returned from [`serenity::Message::convert`].
@@ -55,7 +55,7 @@ impl ArgumentConvert for serenity::Message {
         _: Option<serenity::GuildId>,
         channel_id: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         let extract_from_message_id = || Some((channel_id?, s.parse().ok()?));
 

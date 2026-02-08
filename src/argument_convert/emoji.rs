@@ -4,7 +4,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use super::ArgumentConvert;
+use super::{ArgumentConvert, MessageContext};
 use crate::serenity_prelude as serenity;
 
 /// Error that can be returned from [`serenity::Emoji::convert`].
@@ -48,7 +48,7 @@ impl ArgumentConvert for serenity::Emoji {
         guild_id: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         // Get Guild or PartialGuild
         let guild_id = guild_id.ok_or(EmojiParseError::OutsideGuild)?;
@@ -88,7 +88,7 @@ impl ArgumentConvert for serenity::EmojiId {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         s.parse()
     }

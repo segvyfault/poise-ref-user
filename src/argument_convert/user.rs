@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use super::ArgumentConvert;
+use super::{ArgumentConvert, MessageContext};
 use crate::serenity_prelude as serenity;
 
 /// Error that can be returned from [`serenity::User::convert`].
@@ -32,7 +32,7 @@ impl ArgumentConvert for serenity::User {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        msg: Option<(serenity::Message, &mut bool)>,
+        msg: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         // If string is a raw user ID or a mention
         if let Some(user_id) = s
@@ -46,13 +46,12 @@ impl ArgumentConvert for serenity::User {
                 return Ok(user);
             }
         }
-        else {
-            if let Some((msg, used)) = msg {
-                if !*used {
-                    if let Some(referenced) = &msg.referenced_message {
-                        *used = true;
-                        return Ok(referenced.author.clone());
-                    }
+        else if let Some(msg_ctx) = msg {
+            if !msg_ctx.used_referenced_user {
+                if let Some(referenced) = &msg_ctx.message.referenced_message {
+                    msg_ctx.used_referenced_user = true;
+                    msg_ctx.consumed_string = Some(s.to_string());
+                    return Ok(referenced.author.clone());
                 }
             }
         }

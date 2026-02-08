@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use super::ArgumentConvert;
+use super::{ArgumentConvert, MessageContext};
 use crate::serenity_prelude as serenity;
 
 /// Error that can be returned from [`serenity::Role::convert`].
@@ -56,7 +56,7 @@ impl ArgumentConvert for serenity::Role {
         guild_id: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         let guild_id = guild_id.ok_or(RoleParseError::NotInGuild)?;
 

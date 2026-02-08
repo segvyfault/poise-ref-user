@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use super::ArgumentConvert;
+use super::{ArgumentConvert, MessageContext};
 use crate::serenity_prelude as serenity;
 
 /// Error that can be returned from [`serenity::Member::convert`].
@@ -35,10 +35,11 @@ impl fmt::Display for MemberParseError {
 ///
 /// The lookup strategy is as follows (in order):
 /// 1. Lookup by ID.
-/// 2. [Lookup by mention](`serenity::utils::parse_user_mention`).
-/// 3. [Lookup by name#discrim](`serenity::utils::parse_user_tag`).
-/// 4. Lookup by name
-/// 5. Lookup by nickname
+/// 2. Lookup by referenced message author.
+/// 3. [Lookup by mention](`serenity::utils::parse_user_mention`).
+/// 4. [Lookup by name#discrim](`serenity::utils::parse_user_tag`).
+/// 5. Lookup by name
+/// 6. Lookup by nickname
 #[async_trait::async_trait]
 impl ArgumentConvert for serenity::Member {
     type Err = MemberParseError;
@@ -48,7 +49,7 @@ impl ArgumentConvert for serenity::Member {
         guild_id: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        msg: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         let guild_id = guild_id.ok_or(MemberParseError::OutsideGuild)?;
 
@@ -60,6 +61,17 @@ impl ArgumentConvert for serenity::Member {
         {
             if let Ok(member) = guild_id.member(&ctx, user_id).await {
                 return Ok(member);
+            }
+        }
+        else if let Some(msg_ctx) = msg {
+            if !msg_ctx.used_referenced_user {
+                if let Some(referenced) = &msg_ctx.message.referenced_message {
+                    if let Ok(member) = guild_id.member(&ctx, referenced.author.id).await {
+                        msg_ctx.used_referenced_user = true;
+                        msg_ctx.consumed_string = Some(s.to_string());
+                        return Ok(member);
+                    }
+                }
             }
         }
 

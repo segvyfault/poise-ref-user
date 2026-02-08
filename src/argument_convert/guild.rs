@@ -4,7 +4,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use super::ArgumentConvert;
+use super::{ArgumentConvert, MessageContext};
 use crate::serenity_prelude as serenity;
 
 /// Error that can be returned from [`serenity::Guild::convert`].
@@ -50,7 +50,7 @@ impl ArgumentConvert for serenity::Guild {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         let cache = ctx.cache().ok_or(GuildParseError::NoCache)?;
         let guild_id = s.parse().map_err(GuildParseError::Malformed)?;
@@ -70,7 +70,7 @@ impl ArgumentConvert for serenity::GuildId {
         _: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         s.parse()
     }

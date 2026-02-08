@@ -3,7 +3,7 @@
 
 use std::fmt;
 
-use super::ArgumentConvert;
+use super::{ArgumentConvert, MessageContext};
 use crate::serenity_prelude as serenity;
 
 /// Error that can be returned from [`serenity::Channel::convert`].
@@ -103,7 +103,7 @@ impl ArgumentConvert for serenity::Channel {
         guild_id: Option<serenity::GuildId>,
         _: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         let channel = lookup_channel_global(&ctx, guild_id, s).await?;
 
@@ -164,7 +164,7 @@ impl ArgumentConvert for serenity::GuildChannel {
         guild_id: Option<serenity::GuildId>,
         channel_id: Option<serenity::GenericChannelId>,
         s: &str,
-        _: Option<(serenity::Message, &mut bool)>,
+        _: Option<&mut MessageContext>,
     ) -> Result<Self, Self::Err> {
         match serenity::Channel::convert(&ctx, guild_id, channel_id, s, None).await {
             Ok(serenity::Channel::Guild(channel)) => Ok(channel),

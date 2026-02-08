@@ -17,7 +17,7 @@ use crate::serenity_prelude as serenity;
 /// escaping.
 ///
 /// Leading whitespace will be trimmed; trailing whitespace is not consumed.
-fn pop_string(args: &str) -> Result<(&str, String), crate::TooFewArguments> {
+fn pop_string(args: &str) -> Result<(String, String), crate::TooFewArguments> {
     // TODO: consider changing the behavior to parse quotes literally if they're in the middle
     // of the string:
     // - `"hello world"` => `hello world`
@@ -53,7 +53,7 @@ fn pop_string(args: &str) -> Result<(&str, String), crate::TooFewArguments> {
         chars.next();
     }
 
-    Ok((chars.as_str(), output))
+    Ok((chars.as_str().to_owned(), output))
 }
 
 /// Error thrown if user passes too many arguments to a command

@@ -15,7 +15,7 @@ impl KeyValueArgs {
     }
 
     /// Reads a single key value pair ("key=value") from the front of the arguments
-    fn pop_single_key_value_pair(args: &str) -> Option<(&str, (String, String))> {
+    fn pop_single_key_value_pair(args: &str) -> Option<(String, (String, String))> {
         // TODO: share quote parsing machinery with PopArgument impl for String
 
         if args.is_empty() {
@@ -52,17 +52,17 @@ impl KeyValueArgs {
 
         let args = chars.as_str();
         // `args` used to contain "key=value ...", now it contains "value ...", so pop the value off
-        let (args, value) = super::pop_string(args).unwrap_or((args, String::new()));
+        let (args, value) = super::pop_string(args).unwrap_or((args.to_owned(), String::new()));
 
         Some((args, (key, value)))
     }
 
     /// Reads as many key-value args as possible from the front of the string and produces a
     /// [`KeyValueArgs`] out of those
-    fn pop_from(mut args: &str) -> (&str, Self) {
+    fn pop_from(mut args: String) -> (String, Self) {
         let mut pairs = std::collections::HashMap::new();
 
-        while let Some((remaining_args, (key, value))) = Self::pop_single_key_value_pair(args) {
+        while let Some((remaining_args, (key, value))) = Self::pop_single_key_value_pair(&args) {
             args = remaining_args;
             pairs.insert(key, value);
         }
@@ -79,9 +79,9 @@ impl<'a> PopArgument<'a> for KeyValueArgs {
         used_ref_user: bool,
         _: &serenity::Context,
         _: &serenity::Message,
-    ) -> Result<(&'a str, usize, bool, Self), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>
+    ) -> Result<(String, usize, bool, Self), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>
     {
-        let (a, b) = Self::pop_from(args);
+        let (a, b) = Self::pop_from(args.to_owned());
 
         Ok((a, attachment_index, used_ref_user, b))
     }
@@ -109,7 +109,7 @@ fn test_key_value_args() {
         (r#"dummyval"#, &[], "dummyval"),
         (r#"dummyval="#, &[("dummyval", "")], ""),
     ] {
-        let (args, kv_args) = KeyValueArgs::pop_from(string);
+        let (args, kv_args) = KeyValueArgs::pop_from(string.to_owned());
 
         assert_eq!(
             kv_args.0,

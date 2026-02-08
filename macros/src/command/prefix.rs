@@ -99,7 +99,7 @@ fn parse_lazy(
             msg
         ).await {
             Ok((new_args, new_attachment_idx, new_uru, token)) => {
-                args = new_args;
+                args = &new_args;
                 attachment_idx = new_attachment_idx;
                 uru = new_uru;
                 let #token: Option<#ty> = Some(token);
@@ -142,7 +142,7 @@ fn parse_rest(
                 serenity_ctx, msg.guild_id, Some(msg.channel_id), input, None
             ).await {
                 Ok(#token) => {
-                    let args = "";
+                    let args = "".to_string();
                     #pass
                     #parsed_rest
                 },
@@ -168,7 +168,7 @@ fn parse_flag(
             msg
         ).await {
             Ok((new_args, new_attachment_idx, new_uru, token)) if token.eq_ignore_ascii_case(#name) => {
-                args = new_args;
+                args = &new_args;
                 attachment_idx = new_attachment_idx;
                 uru = new_uru;
                 let #token = true;
@@ -198,7 +198,7 @@ fn parse_string(
             msg
         ).await {
             Ok((new_args, new_attachment_idx, new_uru, token)) => {
-                args = new_args;
+                args = &new_args;
                 attachment_idx = new_attachment_idx;
                 uru = new_uru;
                 match <#ty as ::std::str::FromStr>::from_str(&token) {
@@ -227,7 +227,7 @@ fn parse_param(
                 msg
             ).await {
                 Ok((new_args, new_attachment_idx, new_uru, token)) => {
-                    args = new_args;
+                    args = &new_args;
                     attachment_idx = new_attachment_idx;
                     uru = new_uru;
                     let #token: Option<#ty> = Some(token);
@@ -260,8 +260,10 @@ fn parse_param(
                     Ok((new_args, new_attachment_idx, new_uru, token)) => {
                         #token.push(token);
                         rest.push(new_args.clone());
-                        uru_states.push(new_uru);
-                        args = new_args;
+                        if !uru {
+                            uru_states.push(new_uru);
+                        }
+                        args = &new_args;
                         attachment_idx = new_attachment_idx;
                         uru = new_uru;
                     },
@@ -286,7 +288,7 @@ fn parse_param(
                 msg
             ).await {
                 Ok((new_args, new_attachment_idx, new_uru, #token)) => {
-                    args = new_args;
+                    args = &new_args;
                     attachment_idx = new_attachment_idx;
                     uru = new_uru;
                     #parsed_rest
