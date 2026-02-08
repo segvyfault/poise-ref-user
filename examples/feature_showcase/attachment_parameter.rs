@@ -17,19 +17,19 @@ pub async fn file_details(
     Ok(())
 }
 
-// #[poise::command(prefix_command)]
-// pub async fn totalsize(
-//     ctx: Context<'_>,
-//     #[description = "File to rename"] files: Vec<serenity::Attachment>,
-// ) -> Result<(), Error> {
-//     let total = files.iter().map(|f| f.size as u64).sum::<u64>();
-//
-//     ctx.say(format!(
-//         "Total file size: `{}B`. Average size: `{}B`",
-//         total,
-//         total.checked_div(files.len() as _).unwrap_or(0)
-//     ))
-//     .await?;
-//
-//     Ok(())
-// }
+#[poise::command(prefix_command)]
+pub async fn totalsize(
+    ctx: Context<'_>,
+    #[description = "File to rename"] files: Vec<serenity::Attachment>,
+) -> Result<(), Error> {
+    let total = files.iter().map(|f| f.size as u64).sum::<u64>();
+
+    ctx.say(format!(
+        "Total file size: `{}B`. Average size: `{}B`",
+        total,
+        total.checked_div(files.len() as _).unwrap_or(0)
+    ))
+    .await?;
+
+    Ok(())
+}

@@ -34,6 +34,8 @@ impl MessageContext {
     }
 }
 
+use crate::serenity_prelude as serenity;
+
 /// Parse a value from a string in the context of a received message.
 ///
 /// This trait is similar to [`std::str::FromStr`]. The difference is that this trait supports

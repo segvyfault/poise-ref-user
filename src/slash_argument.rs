@@ -49,7 +49,10 @@ where
         interaction.guild_id,
         Some(interaction.channel_id),
         string,
+<<<<<<< HEAD
         None
+=======
+>>>>>>> upstream/serenity-next
     )
     .await
     .map_err(|e| SlashArgError::Parse {

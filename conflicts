@@ -1,0 +1,976 @@
+diff --cc Cargo.lock
+index 079fe75b58,ecf1124e9c..0000000000
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@@ -1509,7 -1509,7 +1509,11 @@@ dependencies = 
+  [[package]]
+  name = "serenity"
+  version = "0.12.4"
+++<<<<<<< HEAD
+ +source = "git+https://github.com/serenity-rs/serenity?rev=e792c8e#e792c8e6edfa6cf994bdd4e15e020a25f267a187"
+++=======
++ source = "git+https://github.com/serenity-rs/serenity?branch=next#e792c8e6edfa6cf994bdd4e15e020a25f267a187"
+++>>>>>>> upstream/serenity-next
+  dependencies = [
+   "aformat",
+   "arrayvec",
+diff --cc Cargo.toml
+index 21bf86f9bc,4abdb83c7a..0000000000
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@@ -24,7 -24,7 +24,11 @@@ indexmap = "2.2.6
+  default-features = false
+  features = ["builder", "gateway", "model", "utils", "collector", "framework"]
+  git = "https://github.com/serenity-rs/serenity"
+++<<<<<<< HEAD
+ +rev = "e792c8e"
+++=======
++ branch = "next"
+++>>>>>>> upstream/serenity-next
+  
+  [dev-dependencies]
+  # For the examples
+diff --cc examples/feature_showcase/main.rs
+index 7faabe3df8,26a525f711..0000000000
+--- a/examples/feature_showcase/main.rs
++++ b/examples/feature_showcase/main.rs
+@@@ -44,7 -44,7 +44,11 @@@ async fn main() 
+          commands: vec![
+              register_commands(),
+              attachment_parameter::file_details(),
+++<<<<<<< HEAD
+ +            // attachment_parameter::totalsize(),
+++=======
++             attachment_parameter::totalsize(),
+++>>>>>>> upstream/serenity-next
+              autocomplete::greet(),
+              bool_parameter::oracle(),
+              #[cfg(feature = "cache")]
+diff --cc macros/src/command/prefix.rs
+index 9923381a49,c67df9840a..0000000000
+--- a/macros/src/command/prefix.rs
++++ b/macros/src/command/prefix.rs
+@@@ -94,14 -94,10 +94,21 @@@ fn parse_lazy
+          match <#ty as ::poise::PopArgument>::pop_from(
+              &args,
+              attachment_idx,
+++<<<<<<< HEAD
+ +            uru,
+ +            serenity_ctx,
+ +            msg
+ +        ).await {
+ +            Ok((new_args, new_attachment_idx, new_uru, token)) => {
+ +                args = &new_args;
+ +                attachment_idx = new_attachment_idx;
+ +                uru = new_uru;
+++=======
++             serenity_ctx,
++             msg
++         ).await {
++             Ok((args, attachment_idx, token)) => {
+++>>>>>>> upstream/serenity-next
+                  let #token: Option<#ty> = Some(token);
+                  #parsed_rest
+              }
+@@@ -113,12 -109,11 +120,20 @@@
+  /// Parses `#[rest] T` and `#[rest] Option<T>`. In the former case, the extra tail _must_ exist, or
+  /// else this will error.
+  fn parse_rest(
+++<<<<<<< HEAD
+ +    mut ty: &syn::Type,
+ +    token: syn::Ident,
+ +    parsed_rest: proc_macro2::TokenStream,
+ +) -> proc_macro2::TokenStream {
+ +    let (pass, fail) = if let Some(extracted_ty) = unwrap_generic(ty, "Option") {
+ +        ty = extracted_ty;
+++=======
++     ty: &syn::Type,
++     token: syn::Ident,
++     parsed_rest: proc_macro2::TokenStream,
++ ) -> proc_macro2::TokenStream {
++     let (pass, fail) = if let Some(ty) = unwrap_generic(ty, "Option") {
+++>>>>>>> upstream/serenity-next
+          (
+              quote::quote! { let #token: Option<#ty> = Some(#token); },
+              quote::quote! {
+@@@ -139,10 -134,10 +154,17 @@@
+              #fail
+          } else {
+              match <#ty as ::poise::ArgumentConvert>::convert(
+++<<<<<<< HEAD
+ +                serenity_ctx, msg.guild_id, Some(msg.channel_id), input, None
+ +            ).await {
+ +                Ok(#token) => {
+ +                    let args = "".to_string();
+++=======
++                 serenity_ctx, msg.guild_id, Some(msg.channel_id), input
++             ).await {
++                 Ok(#token) => {
++                     let args = "";
+++>>>>>>> upstream/serenity-next
+                      #pass
+                      #parsed_rest
+                  },
+@@@ -160,26 -155,19 +182,42 @@@ fn parse_flag
+      parsed_rest: proc_macro2::TokenStream,
+  ) -> proc_macro2::TokenStream {
+      quote::quote! {
+++<<<<<<< HEAD
+ +        match <String as ::poise::PopArgument>::pop_from(
+ +            &args,
+ +            attachment_idx,
+ +            uru,
+ +            serenity_ctx,
+ +            msg
+ +        ).await {
+ +            Ok((new_args, new_attachment_idx, new_uru, token)) if token.eq_ignore_ascii_case(#name) => {
+ +                args = &new_args;
+ +                attachment_idx = new_attachment_idx;
+ +                uru = new_uru;
+ +                let #token = true;
+ +                #parsed_rest
+ +            }
+ +            _ => {
+ +                error = (concat!("Must use either `", #name, "` or nothing as a modifier").into(), None);
+ +                let #token = false;
+ +                #parsed_rest
+ +            }
+ +        }
+++=======
++         let #token = match <String as ::poise::PopArgument>::pop_from(
++             &args,
++             attachment_idx,
++             serenity_ctx,
++             msg
++         ).await {
++             Ok((args, attachment_idx, token)) if token.eq_ignore_ascii_case(#name) => true,
++             _ => {
++                 error = (concat!("Must use either `", #name, "` or nothing as a modifier").into(), None);
++                 false
++             }
++         };
++         #parsed_rest
+++>>>>>>> upstream/serenity-next
+      }
+  }
+  
+@@@ -193,14 -181,10 +231,21 @@@ fn parse_string
+          match <String as ::poise::PopArgument>::pop_from(
+              &args,
+              attachment_idx,
+++<<<<<<< HEAD
+ +            uru,
+ +            serenity_ctx,
+ +            msg
+ +        ).await {
+ +            Ok((new_args, new_attachment_idx, new_uru, token)) => {
+ +                args = &new_args;
+ +                attachment_idx = new_attachment_idx;
+ +                uru = new_uru;
+++=======
++             serenity_ctx,
++             msg
++         ).await {
++             Ok((args, attachment_idx, token)) => {
+++>>>>>>> upstream/serenity-next
+                  match <#ty as ::std::str::FromStr>::from_str(&token) {
+                      Ok(#token) => { #parsed_rest },
+                      Err(e) => error = (e.into(), Some(token)),
+@@@ -218,33 -202,30 +263,59 @@@ fn parse_param
+      parsed_rest: proc_macro2::TokenStream,
+  ) -> proc_macro2::TokenStream {
+      if let Some(ty) = unwrap_generic(ty, "Option") {
+++<<<<<<< HEAD
+++=======
++         // Greedily parse `Option<T>` by first trying to parse for `Some(T)`. If that fails, try
++         // again with `None` instead.
+++>>>>>>> upstream/serenity-next
+          quote::quote! {
+              match <#ty as ::poise::PopArgument>::pop_from(
+                  &args,
+                  attachment_idx,
+++<<<<<<< HEAD
+ +                uru,
+ +                serenity_ctx,
+ +                msg
+ +            ).await {
+ +                Ok((new_args, new_attachment_idx, new_uru, token)) => {
+ +                    args = &new_args;
+ +                    attachment_idx = new_attachment_idx;
+ +                    uru = new_uru;
+ +                    let #token: Option<#ty> = Some(token);
+ +                    #parsed_rest
+ +                }
+ +                Err(e) => {
+ +                    error = e;
+ +                    let #token: Option<#ty> = None;
+ +                    #parsed_rest
+ +                }
+ +            }
+ +        }
+ +    } else if let Some(ty) = unwrap_generic(ty, "Vec") {
+ +        quote::quote! {
+ +            let mut #token = Vec::new();
+ +            let mut rest = vec![args.clone()];
+ +            let mut uru_states = vec![uru];
+++=======
++                 serenity_ctx,
++                 msg
++             ).await {
++                 Ok((args, attachment_idx, token)) => {
++                     let #token: Option<#ty> = Some(token);
++                     #parsed_rest
++                 }
++                 Err(e) => error = e,
++             }
++             let #token: Option<#ty> = None;
++             #parsed_rest
++         }
++     } else if let Some(ty) = unwrap_generic(ty, "Vec") {
++         // Greedily try to parse the longest `Vec<T>` possible. Then, backtrack as needed until we
++         // successfully parse the rest of the parameters.
++         quote::quote! {
++             let mut #token = Vec::new();
++             let mut rest = vec![args.clone()];
+++>>>>>>> upstream/serenity-next
+  
+              let mut args = args.clone();
+              let mut attachment_idx = attachment_idx;
+@@@ -253,46 -234,39 +324,79 @@@
+                  match <#ty as ::poise::PopArgument>::pop_from(
+                      &args,
+                      attachment_idx,
+++<<<<<<< HEAD
+ +                    uru,
+ +                    serenity_ctx,
+ +                    msg
+ +                ).await {
+ +                    Ok((new_args, new_attachment_idx, new_uru, token)) => {
+ +                        #token.push(token);
+ +                        rest.push(new_args.clone());
+ +                        if !uru {
+ +                            uru_states.push(new_uru);
+ +                        }
+ +                        args = &new_args;
+ +                        attachment_idx = new_attachment_idx;
+ +                        uru = new_uru;
+ +                    },
+ +                    Err(_) => break,
+ +                }
+ +            }
+ +
+ +            while let Some((args, uru_state)) = rest.pop().zip(uru_states.pop()) {
+ +                args = args;
+ +                uru = uru_state;
+++=======
++                     serenity_ctx,
++                     msg
++                 ).await {
++                     Ok((new_args, new_attachment_idx, token)) => {
++                         #token.push(token);
++                         rest.push(new_args.clone());
++                         args = new_args;
++                         attachment_idx = new_attachment_idx;
++                     },
++                     Err(_) => {
++                         // No `error = e`, because parsing into a Vec<T> parameter with
++                         // spare arguments would cause the error from the spare
++                         // arguments to be the parse error for T, which is confusing
++                         break;
++                     }
++                 }
++             }
++ 
++             while let Some(args) = rest.pop() {
+++>>>>>>> upstream/serenity-next
+                  #parsed_rest
+                  #token.pop();
+              }
+          }
+      } else {
+++<<<<<<< HEAD
+++=======
++         // Here, we just have a `T`.
+++>>>>>>> upstream/serenity-next
+          quote::quote! {
+              match <#ty as ::poise::PopArgument>::pop_from(
+                  &args,
+                  attachment_idx,
+++<<<<<<< HEAD
+ +                uru,
+ +                serenity_ctx,
+ +                msg
+ +            ).await {
+ +                Ok((new_args, new_attachment_idx, new_uru, #token)) => {
+ +                    args = &new_args;
+ +                    attachment_idx = new_attachment_idx;
+ +                    uru = new_uru;
+ +                    #parsed_rest
+ +                },
+++=======
++                 serenity_ctx,
++                 msg
++             ).await {
++                 Ok((args, attachment_idx, #token)) => { #parsed_rest },
+++>>>>>>> upstream/serenity-next
+                  Err(e) => error = e,
+              }
+          }
+@@@ -334,9 -308,8 +438,14 @@@ pub fn generate_prefix_action(inv: &Inv
+              let ( #( #param_idents, )* .. ) = async {
+                  let serenity_ctx = ctx.serenity_context();
+                  let msg = ctx.msg;
+++<<<<<<< HEAD
+ +                let mut args = ctx.args;
+ +                let mut attachment_idx = 0;
+ +                let mut uru = false;
+++=======
++                 let args = ctx.args;
++                 let attachment_idx = 0;
+++>>>>>>> upstream/serenity-next
+  
+                  let mut error: (Box<dyn std::error::Error + Send + Sync>, Option<String>)
+                      = (::poise::TooManyArguments::default().into(), None);
+diff --cc src/argument_convert/channel.rs
+index 5a5c4cd4e5,0b183b9c07..0000000000
+--- a/src/argument_convert/channel.rs
++++ b/src/argument_convert/channel.rs
+@@@ -3,7 -3,7 +3,11 @@@
+  
+  use std::fmt;
+  
+++<<<<<<< HEAD
+ +use super::{ArgumentConvert, MessageContext};
+++=======
++ use super::ArgumentConvert;
+++>>>>>>> upstream/serenity-next
+  use crate::serenity_prelude as serenity;
+  
+  /// Error that can be returned from [`serenity::Channel::convert`].
+@@@ -103,7 -103,6 +107,10 @@@ impl ArgumentConvert for serenity::Chan
+          guild_id: Option<serenity::GuildId>,
+          _: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          let channel = lookup_channel_global(&ctx, guild_id, s).await?;
+  
+@@@ -164,9 -163,8 +171,14 @@@ impl ArgumentConvert for serenity::Guil
+          guild_id: Option<serenity::GuildId>,
+          channel_id: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+ +    ) -> Result<Self, Self::Err> {
+ +        match serenity::Channel::convert(&ctx, guild_id, channel_id, s, None).await {
+++=======
++     ) -> Result<Self, Self::Err> {
++         match serenity::Channel::convert(&ctx, guild_id, channel_id, s).await {
+++>>>>>>> upstream/serenity-next
+              Ok(serenity::Channel::Guild(channel)) => Ok(channel),
+              Ok(_) => Err(GuildChannelParseError::NotAGuildChannel),
+              Err(ChannelParseError::Http(e)) => Err(GuildChannelParseError::Http(e)),
+diff --cc src/argument_convert/emoji.rs
+index 1549f40893,6c54dc0ba5..0000000000
+--- a/src/argument_convert/emoji.rs
++++ b/src/argument_convert/emoji.rs
+@@@ -4,7 -4,7 +4,11 @@@
+  use std::fmt;
+  use std::str::FromStr;
+  
+++<<<<<<< HEAD
+ +use super::{ArgumentConvert, MessageContext};
+++=======
++ use super::ArgumentConvert;
+++>>>>>>> upstream/serenity-next
+  use crate::serenity_prelude as serenity;
+  
+  /// Error that can be returned from [`serenity::Emoji::convert`].
+@@@ -48,7 -48,6 +52,10 @@@ impl ArgumentConvert for serenity::Emoj
+          guild_id: Option<serenity::GuildId>,
+          _: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          // Get Guild or PartialGuild
+          let guild_id = guild_id.ok_or(EmojiParseError::OutsideGuild)?;
+@@@ -88,7 -87,6 +95,10 @@@ impl ArgumentConvert for serenity::Emoj
+          _: Option<serenity::GuildId>,
+          _: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          s.parse()
+      }
+diff --cc src/argument_convert/guild.rs
+index 83cdd8b74f,7bb7c624d3..0000000000
+--- a/src/argument_convert/guild.rs
++++ b/src/argument_convert/guild.rs
+@@@ -4,7 -4,7 +4,11 @@@
+  use std::fmt;
+  use std::str::FromStr;
+  
+++<<<<<<< HEAD
+ +use super::{ArgumentConvert, MessageContext};
+++=======
++ use super::ArgumentConvert;
+++>>>>>>> upstream/serenity-next
+  use crate::serenity_prelude as serenity;
+  
+  /// Error that can be returned from [`serenity::Guild::convert`].
+@@@ -50,7 -50,6 +54,10 @@@ impl ArgumentConvert for serenity::Guil
+          _: Option<serenity::GuildId>,
+          _: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          let cache = ctx.cache().ok_or(GuildParseError::NoCache)?;
+          let guild_id = s.parse().map_err(GuildParseError::Malformed)?;
+@@@ -70,7 -69,6 +77,10 @@@ impl ArgumentConvert for serenity::Guil
+          _: Option<serenity::GuildId>,
+          _: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          s.parse()
+      }
+diff --cc src/argument_convert/member.rs
+index 94a85a88ee,abd39117cf..0000000000
+--- a/src/argument_convert/member.rs
++++ b/src/argument_convert/member.rs
+@@@ -2,7 -2,7 +2,11 @@@
+  
+  use std::fmt;
+  
+++<<<<<<< HEAD
+ +use super::{ArgumentConvert, MessageContext};
+++=======
++ use super::ArgumentConvert;
+++>>>>>>> upstream/serenity-next
+  use crate::serenity_prelude as serenity;
+  
+  /// Error that can be returned from [`serenity::Member::convert`].
+@@@ -35,11 -35,10 +39,18 @@@ impl fmt::Display for MemberParseError 
+  ///
+  /// The lookup strategy is as follows (in order):
+  /// 1. Lookup by ID.
+++<<<<<<< HEAD
+ +/// 2. Lookup by referenced message author.
+ +/// 3. [Lookup by mention](`serenity::utils::parse_user_mention`).
+ +/// 4. [Lookup by name#discrim](`serenity::utils::parse_user_tag`).
+ +/// 5. Lookup by name
+ +/// 6. Lookup by nickname
+++=======
++ /// 2. [Lookup by mention](`serenity::utils::parse_user_mention`).
++ /// 3. [Lookup by name#discrim](`serenity::utils::parse_user_tag`).
++ /// 4. Lookup by name
++ /// 5. Lookup by nickname
+++>>>>>>> upstream/serenity-next
+  #[async_trait::async_trait]
+  impl ArgumentConvert for serenity::Member {
+      type Err = MemberParseError;
+@@@ -49,7 -48,6 +60,10 @@@
+          guild_id: Option<serenity::GuildId>,
+          _: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        msg: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          let guild_id = guild_id.ok_or(MemberParseError::OutsideGuild)?;
+  
+@@@ -63,17 -61,6 +77,20 @@@
+                  return Ok(member);
+              }
+          }
+++<<<<<<< HEAD
+ +        else if let Some(msg_ctx) = msg {
+ +            if !msg_ctx.used_referenced_user {
+ +                if let Some(referenced) = &msg_ctx.message.referenced_message {
+ +                    if let Ok(member) = guild_id.member(&ctx, referenced.author.id).await {
+ +                        msg_ctx.used_referenced_user = true;
+ +                        msg_ctx.consumed_string = Some(s.to_string());
+ +                        return Ok(member);
+ +                    }
+ +                }
+ +            }
+ +        }
+++=======
+++>>>>>>> upstream/serenity-next
+  
+          // If string is a username+discriminator
+          let limit = Some(100u8.into());
+diff --cc src/argument_convert/message.rs
+index 42bb94ca07,9bc448364e..0000000000
+--- a/src/argument_convert/message.rs
++++ b/src/argument_convert/message.rs
+@@@ -2,7 -2,7 +2,11 @@@
+  
+  use std::fmt;
+  
+++<<<<<<< HEAD
+ +use super::{ArgumentConvert, MessageContext};
+++=======
++ use super::ArgumentConvert;
+++>>>>>>> upstream/serenity-next
+  use crate::serenity_prelude as serenity;
+  
+  /// Error that can be returned from [`serenity::Message::convert`].
+@@@ -55,7 -55,6 +59,10 @@@ impl ArgumentConvert for serenity::Mess
+          _: Option<serenity::GuildId>,
+          channel_id: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          let extract_from_message_id = || Some((channel_id?, s.parse().ok()?));
+  
+diff --cc src/argument_convert/mod.rs
+index 8489cb08aa,1856cf8ad6..0000000000
+--- a/src/argument_convert/mod.rs
++++ b/src/argument_convert/mod.rs
+@@@ -8,32 -8,8 +8,37 @@@ mod message
+  mod role;
+  mod user;
+  
+++<<<<<<< HEAD
+ +pub use user::UserParseError;
+ +
+ +use crate::serenity_prelude as serenity;
+ +
+ +/// Message context, a helper for User and Member parsing
+ +pub struct MessageContext {
+ +    /// Message that will be used when parsing
+ +    pub message: serenity::Message,
+ +    /// State whether or not the referenced user has already been used
+ +    pub used_referenced_user: bool,
+ +
+ +    /// For situation where User consumes a string, that needs to be used in the next [rest] string arg
+ +    pub consumed_string: Option<String>
+ +}
+ +
+ +impl MessageContext {
+ +    /// new instance
+ +    pub fn new(message: serenity::Message, uru: bool) -> Self {
+ +        Self {
+ +            message,
+ +            used_referenced_user: uru,
+ +            consumed_string: None
+ +        }
+ +    }
+ +}
+ +
+++=======
++ use crate::serenity_prelude as serenity;
++ 
+++>>>>>>> upstream/serenity-next
+  /// Parse a value from a string in the context of a received message.
+  ///
+  /// This trait is similar to [`std::str::FromStr`]. The difference is that this trait supports
+@@@ -54,7 -30,6 +59,10 @@@ pub trait ArgumentConvert: Sized 
+          guild_id: Option<serenity::GuildId>,
+          channel_id: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        msg: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err>;
+  }
+  
+@@@ -67,7 -42,6 +75,10 @@@ impl ArgumentConvert for String 
+          _: Option<serenity::GuildId>,
+          _: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          Ok(s.to_owned())
+      }
+diff --cc src/argument_convert/role.rs
+index bf80933247,29ab3c4b9f..0000000000
+--- a/src/argument_convert/role.rs
++++ b/src/argument_convert/role.rs
+@@@ -2,7 -2,7 +2,11 @@@
+  
+  use std::fmt;
+  
+++<<<<<<< HEAD
+ +use super::{ArgumentConvert, MessageContext};
+++=======
++ use super::ArgumentConvert;
+++>>>>>>> upstream/serenity-next
+  use crate::serenity_prelude as serenity;
+  
+  /// Error that can be returned from [`serenity::Role::convert`].
+@@@ -56,7 -56,6 +60,10 @@@ impl ArgumentConvert for serenity::Rol
+          guild_id: Option<serenity::GuildId>,
+          _: Option<serenity::GenericChannelId>,
+          s: &str,
+++<<<<<<< HEAD
+ +        _: Option<&mut MessageContext>,
+++=======
+++>>>>>>> upstream/serenity-next
+      ) -> Result<Self, Self::Err> {
+          let guild_id = guild_id.ok_or(RoleParseError::NotInGuild)?;
+  
+diff --cc src/argument_convert/user.rs
+index 7ae347c619,cec41b5ae1..0000000000
+--- a/src/argument_convert/user.rs
++++ b/src/argument_convert/user.rs
+@@@ -2,7 -2,7 +2,11 @@@
+  
+  use std::fmt;
+  
+++<<<<<<< HEAD
+ +use super::{ArgumentConvert, MessageContext};
+++=======
++ use super::ArgumentConvert;
+++>>>>>>> upstream/serenity-next
+  use crate::serenity_prelude as serenity;
+  
+  /// Error that can be returned from [`serenity::User::convert`].
+@@@ -29,11 -29,15 +33,23 @@@ impl ArgumentConvert for serenity::Use
+  
+      async fn convert(
+          ctx: impl serenity::CacheHttp,
+++<<<<<<< HEAD
+ +        _: Option<serenity::GuildId>,
+ +        _: Option<serenity::GenericChannelId>,
+ +        s: &str,
+ +        msg: Option<&mut MessageContext>,
+ +    ) -> Result<Self, Self::Err> {
+++=======
++         guild_id: Option<serenity::GuildId>,
++         channel_id: Option<serenity::GenericChannelId>,
++         s: &str,
++     ) -> Result<Self, Self::Err> {
++         // Convert as a Member which uses HTTP endpoints instead of cache
++         if let Ok(member) = serenity::Member::convert(&ctx, guild_id, channel_id, s).await {
++             return Ok(member.user);
++         }
++ 
+++>>>>>>> upstream/serenity-next
+          // If string is a raw user ID or a mention
+          if let Some(user_id) = s
+              .parse()
+@@@ -46,15 -50,6 +62,18 @@@
+                  return Ok(user);
+              }
+          }
+++<<<<<<< HEAD
+ +        else if let Some(msg_ctx) = msg {
+ +            if !msg_ctx.used_referenced_user {
+ +                if let Some(referenced) = &msg_ctx.message.referenced_message {
+ +                    msg_ctx.used_referenced_user = true;
+ +                    msg_ctx.consumed_string = Some(s.to_string());
+ +                    return Ok(referenced.author.clone());
+ +                }
+ +            }
+ +        }
+++=======
+++>>>>>>> upstream/serenity-next
+  
+          Err(UserParseError::NotFoundOrMalformed)
+      }
+diff --cc src/choice_parameter.rs
+index 19a568e7eb,57f6016523..0000000000
+--- a/src/choice_parameter.rs
++++ b/src/choice_parameter.rs
+@@@ -57,12 -57,11 +57,18 @@@ impl<'a, T: ChoiceParameter> crate::Pop
+      async fn pop_from(
+          args: &'a str,
+          attachment_index: usize,
+ +        used_ref_user: bool,
+          ctx: &serenity::Context,
+          msg: &serenity::Message,
+++<<<<<<< HEAD
+ +    ) -> PopArgumentResult<Self> {
+ +        let (args, attachment_index, uru, s) =
+ +            String::pop_from(args, attachment_index, used_ref_user, ctx, msg).await?;
+++=======
++     ) -> PopArgumentResult<'a, Self> {
++         let (args, attachment_index, s) =
++             String::pop_from(args, attachment_index, ctx, msg).await?;
+++>>>>>>> upstream/serenity-next
+  
+          Ok((
+              args,
+diff --cc src/prefix_argument/argument_trait.rs
+index 98ac2685f0,3d1463e51a..0000000000
+--- a/src/prefix_argument/argument_trait.rs
++++ b/src/prefix_argument/argument_trait.rs
+@@@ -1,15 -1,15 +1,24 @@@
+  //! Trait implemented for all types usable as prefix command parameters.
+  
+  use super::{pop_string, InvalidBool, MissingAttachment, TooFewArguments};
+++<<<<<<< HEAD
+ +use crate::argument_convert::{ArgumentConvert, MessageContext};
+++=======
++ use crate::argument_convert::ArgumentConvert;
+++>>>>>>> upstream/serenity-next
+  use crate::serenity_prelude as serenity;
+  use std::str::FromStr;
+  
+  /// The result of [`PopArgument::pop_from`].
+  ///  - If Ok, this is `(remaining, attachment_index, T)`
+  ///  - If Err, this is `(error, failing_arg)`
+++<<<<<<< HEAD
+ +pub(crate) type PopArgumentResult<T> =
+ +    Result<(String, usize, bool, T), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>;
+++=======
++ pub(crate) type PopArgumentResult<'a, T> =
++     Result<(&'a str, usize, T), (Box<dyn std::error::Error + Send + Sync>, Option<String>)>;
+++>>>>>>> upstream/serenity-next
+  
+  /// Parse a value out of a string by popping off the front of the string. Discord message context
+  /// is available for parsing, and IO may be done as part of the parsing.
+@@@ -25,10 -25,9 +34,14 @@@ pub trait PopArgument<'a>: Sized 
+      async fn pop_from(
+          args: &'a str,
+          attachment_index: usize,
+ +        used_ref_user: bool,
+          ctx: &serenity::Context,
+          msg: &serenity::Message,
+++<<<<<<< HEAD
+ +    ) -> PopArgumentResult< Self>;
+++=======
++     ) -> PopArgumentResult<'a, Self>;
+++>>>>>>> upstream/serenity-next
+  }
+  
+  #[async_trait::async_trait]
+@@@ -36,10 -35,9 +49,14 @@@ impl<'a> PopArgument<'a> for bool 
+      async fn pop_from(
+          args: &'a str,
+          attachment_index: usize,
+ +        used_ref_user: bool,
+          ctx: &serenity::Context,
+          msg: &serenity::Message,
+++<<<<<<< HEAD
+ +    ) -> PopArgumentResult<Self> {
+++=======
++     ) -> PopArgumentResult<'a, Self> {
+++>>>>>>> upstream/serenity-next
+          let (args, string) = pop_string(args).map_err(|e| (e.into(), None))?;
+  
+          let value = match string.to_ascii_lowercase().trim() {
+@@@ -57,10 -55,9 +74,14 @@@ impl<'a> PopArgument<'a> for serenity::
+      async fn pop_from(
+          args: &'a str,
+          attachment_index: usize,
+ +        used_ref_user: bool,
+          ctx: &serenity::Context,
+          msg: &serenity::Message,
+++<<<<<<< HEAD
+ +    ) -> PopArgumentResult<Self> {
+++=======
++     ) -> PopArgumentResult<'a, Self> {
+++>>>>>>> upstream/serenity-next
+          let attachment = msg
+              .attachments
+              .get(attachment_index)
+@@@ -76,12 -73,11 +97,20 @@@ impl<'a> PopArgument<'a> for String 
+      async fn pop_from(
+          args: &'a str,
+          attachment_index: usize,
+++<<<<<<< HEAD
+ +        used_ref_user: bool,
+ +        ctx: &serenity::Context,
+ +        msg: &serenity::Message,
+ +    ) -> PopArgumentResult<Self> {
+ +        match pop_string(args) {
+ +            Ok((args, string)) => Ok((args, attachment_index, used_ref_user, string)),
+++=======
++         ctx: &serenity::Context,
++         msg: &serenity::Message,
++     ) -> PopArgumentResult<'a, Self> {
++         match pop_string(args) {
++             Ok((args, string)) => Ok((args, attachment_index, string)),
+++>>>>>>> upstream/serenity-next
+              Err(err) => Err((err.into(), Some(args.into()))),
+          }
+      }
+@@@ -98,16 -94,15 +127,26 @@@ macro_rules! from_str_pop_argument 
+                  async fn pop_from(
+                      args: &'a str,
+                      attachment_index: usize,
+++<<<<<<< HEAD
+ +                    used_ref_user: bool,
+ +                    ctx: &serenity::Context,
+ +                    msg: &serenity::Message,
+ +                ) -> PopArgumentResult<Self>
+++=======
++                     ctx: &serenity::Context,
++                     msg: &serenity::Message,
++                 ) -> PopArgumentResult<'a, Self>
+++>>>>>>> upstream/serenity-next
+                  where
+                      Self: FromStr,
+                  {
+                      let (args, string) = pop_string(args).map_err(|e| (e.into(), None))?;
+                      let object = Self::from_str(&string).map_err(|e| (e.into(), Some(string)))?;
+++<<<<<<< HEAD
+ +                    Ok((args.trim_start().to_owned(), attachment_index, used_ref_user, object))
+++=======
++                     Ok((args.trim_start(), attachment_index, object))
+++>>>>>>> upstream/serenity-next
+                  }
+              }
+          )*
+@@@ -134,86 -129,26 +173,105 @@@ macro_rules! argumentconvert_pop_argume
+                  async fn pop_from(
+                      args: &'a str,
+                      attachment_index: usize,
+++<<<<<<< HEAD
+ +                    used_ref_user: bool,
+ +                    ctx: &serenity::Context,
+ +                    msg: &serenity::Message,
+ +                ) -> PopArgumentResult<Self>
+++=======
++                     ctx: &serenity::Context,
++                     msg: &serenity::Message,
++                 ) -> PopArgumentResult<'a, Self>
+++>>>>>>> upstream/serenity-next
+                  where
+                      Self: ArgumentConvert,
+                  {
+                      let (args, string) = pop_string(args).map_err(|e| (e.into(), None))?;
+++<<<<<<< HEAD
+ +                    let object = Self::convert(ctx, msg.guild_id, Some(msg.channel_id), &string, None)
+ +                        .await
+ +                        .map_err(|e| (e.into(), Some(string)))?;
+ +
+ +                    Ok((args.trim_start().to_owned(), attachment_index, used_ref_user, object))
+++=======
++                     let object = Self::convert(ctx, msg.guild_id, Some(msg.channel_id), &string)
++                         .await
++                         .map_err(|e| (e.into(), Some(string)))?;
++ 
++                     Ok((args.trim_start(), attachment_index, object))
+++>>>>>>> upstream/serenity-next
+                  }
+              }
+          )*
+      }
+  }
+  
+++<<<<<<< HEAD
+ +#[async_trait::async_trait]
+ +impl<'a> PopArgument<'a> for serenity::User {
+ +    async fn pop_from(
+ +        args: &'a str,
+ +        attachment_index: usize,
+ +        mut used_ref_user: bool,
+ +        ctx: &serenity::Context,
+ +        msg: &serenity::Message,
+ +    ) -> PopArgumentResult<Self>
+ +    where
+ +        Self: ArgumentConvert,
+ +    {
+ +        let mut msg_ctx = MessageContext::new(msg.to_owned(), used_ref_user);
+ +
+ +        let (mut args, string) = match pop_string(args) {
+ +            Ok(r) => r,
+ +            Err(_) => ("".into(), "".into())
+ +        };
+ +
+ +        let object = Self::convert(
+ +            ctx,
+ +            msg.guild_id, Some(msg.channel_id),
+ +            &string,
+ +            Some(&mut msg_ctx)
+ +        )
+ +            .await
+ +            .map_err(|e| (e.into(), Some(string)))?;
+ +
+ +        if let Some(unused_pop) = msg_ctx.consumed_string {
+ +            args.insert_str(0, &unused_pop);
+ +        }
+ +        used_ref_user = msg_ctx.used_referenced_user;
+ +
+ +        Ok((args.trim_start().to_owned(), attachment_index, used_ref_user, object))
+ +    }
+ +}
+ +
+ +#[async_trait::async_trait]
+ +impl<'a> PopArgument<'a> for serenity::Member {
+ +    async fn pop_from(
+ +        args: &'a str,
+ +        attachment_index: usize,
+ +        used_ref_user: bool,
+ +        ctx: &serenity::Context,
+ +        msg: &serenity::Message,
+ +    ) -> PopArgumentResult<Self>
+ +    where
+ +        Self: ArgumentConvert,
+ +    {
+ +        let (args, string) = pop_string(args).map_err(|e| (e.into(), None))?;
+ +        let object = Self::convert(ctx, msg.guild_id, Some(msg.channel_id), &string, None)
+ +            .await
+ +            .map_err(|e| (e.into(), Some(string)))?;
+ +
+ +        Ok((args.trim_start().to_owned(), attachment_index, used_ref_user, object))
+ +    }
+ +}
+ +
+ +argumentconvert_pop_argument! {
+ +    // serenity::User, 
+ +    // serenity::Member,
+++=======
++ argumentconvert_pop_argument! {
++     serenity::User, serenity::Member,
+++>>>>>>> upstream/serenity-next
+      serenity::Message,
+      serenity::Channel, serenity::GuildChannel,
+      serenity::EmojiId, serenity::Emoji,
+@@@ -250,10 -185,9 +308,14 @@@ macro_rules! snowflake_pop_argument 
+              async fn pop_from(
+                  args: &'a str,
+                  attachment_index: usize,
+ +                used_ref_user: bool,
+                  ctx: &serenity::Context,
+                  msg: &serenity::Message,
+++<<<<<<< HEAD
+ +            ) -> PopArgumentResult<Self> {
+++=======
++             ) -> PopArgumentResult<'a, Self> {
+++>>>>>>> upstream/serenity-next
+                  let (args, string) = pop_string(args).map_err(|e| (e.into(), None))?;
+  
+                  if let Some(parsed_id) = string
+diff --cc src/slash_argument.rs
+index 963723dc5d,1d28da4b49..0000000000
+--- a/src/slash_argument.rs
++++ b/src/slash_argument.rs
+@@@ -49,7 -49,6 +49,10 @@@ wher
+          interaction.guild_id,
+          Some(interaction.channel_id),
+          string,
+++<<<<<<< HEAD
+ +        None
+++=======
+++>>>>>>> upstream/serenity-next
+      )
+      .await
+      .map_err(|e| SlashArgError::Parse {

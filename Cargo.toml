@@ -24,7 +24,7 @@ indexmap = "2.2.6"
 default-features = false
 features = ["builder", "gateway", "model", "utils", "collector", "framework"]
 git = "https://github.com/serenity-rs/serenity"
-rev = "e792c8e"
+branch = "next"
 
 [dev-dependencies]
 # For the examples

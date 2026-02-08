@@ -138,7 +138,6 @@ macro_rules! argumentconvert_pop_argument {
                     ctx: &serenity::Context,
                     msg: &serenity::Message,
                 ) -> PopArgumentResult<Self>
-                where
                     Self: ArgumentConvert,
                 {
                     let (args, string) = pop_string(args).map_err(|e| (e.into(), None))?;

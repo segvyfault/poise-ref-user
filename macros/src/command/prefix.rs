@@ -218,6 +218,8 @@ fn parse_param(
     parsed_rest: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
     if let Some(ty) = unwrap_generic(ty, "Option") {
+        // Greedily parse `Option<T>` by first trying to parse for `Some(T)`. If that fails, try
+        // again with `None` instead.
         quote::quote! {
             match <#ty as ::poise::PopArgument>::pop_from(
                 &args,
@@ -279,6 +281,7 @@ fn parse_param(
             }
         }
     } else {
+        // Here, we just have a `T`.
         quote::quote! {
             match <#ty as ::poise::PopArgument>::pop_from(
                 &args,

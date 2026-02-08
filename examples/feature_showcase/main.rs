@@ -44,7 +44,7 @@ async fn main() {
         commands: vec![
             register_commands(),
             attachment_parameter::file_details(),
-            // attachment_parameter::totalsize(),
+            attachment_parameter::totalsize(),
             autocomplete::greet(),
             bool_parameter::oracle(),
             #[cfg(feature = "cache")]
